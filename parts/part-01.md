@@ -104,3 +104,4 @@ The skill serves dual purpose:
 - Computational: Live ND (up to ND128), Live GND, Hi-Res (50MP handheld, 80MP tripod), Focus Bracketing/Stacking, ProCapture, Live Composite
 
 ---
+

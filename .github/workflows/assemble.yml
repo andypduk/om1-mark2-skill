@@ -1,0 +1,33 @@
+name: assemble
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'parts/**'
+      - 'build.sh'
+      - '.github/workflows/assemble.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble om1-mark2.md from parts
+        run: ./build.sh
+
+      - name: Commit assembled guide
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add om1-mark2.md
+          if git diff --staged --quiet; then
+            echo "no change"
+          else
+            git commit -m "assemble om1-mark2.md from parts"
+            git push
+          fi

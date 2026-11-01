@@ -1,0 +1,50 @@
+name: import
+
+# One-shot import of the OM-1 Mark II guide from a temporary paste, so the
+# committed copy is byte-identical to the local skill reference. Runs only when
+# IMPORT_SOURCE changes, then removes IMPORT_SOURCE and deletes the paste.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'IMPORT_SOURCE'
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch and verify the guide
+        run: |
+          set -euo pipefail
+          URL=$(tr -d '\n' < IMPORT_SOURCE)
+          curl -fsSL "$URL" -o om1-mark2.md.tmp
+          echo "8a1b86147e9da83351a5b488c324598f9326b3238e0691931f472a4b11b887c6  om1-mark2.md.tmp" | sha256sum -c -
+          mv om1-mark2.md.tmp om1-mark2.md
+
+      - name: Split into parts
+        run: |
+          set -euo pipefail
+          python3 .github/split_parts.py
+
+      - name: Commit
+        run: |
+          set -euo pipefail
+          rm -f IMPORT_SOURCE
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Import om1-mark2.md (sha256 verified) and regenerate parts"
+          git push
+
+      - name: Delete the temporary paste
+        if: always()
+        run: |
+          set -euo pipefail
+          URL=$(git show HEAD~1:IMPORT_SOURCE 2>/dev/null | tr -d '\n' || true)
+          if [ -n "$URL" ]; then curl -fsS -X DELETE "$URL" || true; fi
